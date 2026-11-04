@@ -59,18 +59,6 @@
 \item \term{时序评估：}按每位用户的时间戳做外层 80\%/20\% 留出（训练 79,748 条，测试 20,256 条），并在训练集内部再留出验证集（16,209 条）调参。测试集 RMSE 从用户均分基线的 0.9750 降至双偏差的 0.9072，最终混合模型为 0.8979；MAE 从 0.7477 降至 0.6851。另报告随机邻居阴性对照、合成信号阳性对照、逐项消融和按用户配对 bootstrap 区间。
 \item \term{纯 Python 工程与终端界面：}TUI 基于 prompt\_toolkit，支持用户、流派子串和片名子串筛选，F2/F3 翻页，Tab 切换输入框，Ctrl-Q 退出，直接读取离线 Top-50 缓存。
 \end{itemize}
-\begin{center}
-\small
-\begin{tabularx}{\textwidth}{P{38mm}Y}
-\toprule
-\term{提交信息} & \term{要求}\\
-\midrule
-正文与代码 & 正文按课程要求排版，完整实现见仓库源码。\\
-截止时间与接收邮箱 & 11 月 15 日 23:59 前发送至 \code{zhh\_swufe@126.com}，发送一次即可。\\
-邮件主题与压缩包命名 & 邮件主题：周一12节实验报告：温洛；文件夹与压缩包同名：周一12节：温洛\\
-\bottomrule
-\end{tabularx}
-\end{center}
 
 \section{实验背景、数据特征与实现风险}
 \subsection{MovieLens 数据集结构与评分分布}
@@ -232,6 +220,12 @@ ItemCF & $K$ / $c_{\min}$ / $\beta_s$ / $\alpha_i$ & 100 / 1 / 15.0 / 0.25\\
 \item 底部状态与快捷键栏：显示筛选结果数、当前页范围和 F2 上页、F3 下页、Tab/Shift-Tab 切换输入框、Ctrl-Q/Ctrl-C 退出；界面启用鼠标支持。
 \end{enumerate}
 底部还会显示 UserCF 邻居数、ItemCF 邻居数、混合系数，以及混合模型在测试集上的 RMSE/MAE。需要区分的是，表格中的“支持权重”是 UserCF 与 ItemCF 邻居权重之和，不是残差贡献；二者都在缓存构建时算好。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/tui.png}
+\caption{TUI 运行界面：用户 66 的缓存推荐（第 1 页，每页 8 条）。}
+\end{figure}
 
 \subsection{用户 66 的推荐案例}
 用户 66 在数据中有 49 条评分，平均分 3.959。缓存中的前四名及分解如表~\ref{tab:user66} 所示；表中 $\Delta$ 为已经乘过混合系数 $\gamma=0.75$ 的残差贡献，因此“基础分 + 两列贡献”等于预测分（四舍五入误差除外）。《马耳他之鹰》的基础分 4.482 低于《肖申克的救赎》，ItemCF 贡献 +0.201 使其升至 4.692；《肖申克的救赎》基础分 4.632 最高，但 ItemCF 贡献为负（$-0.052$），退居第四。榜单由基础分与两条残差通道共同决定，并非按大众口碑简单排序；该表是单用户展示，总体结论以第 3 节指标为准。
