@@ -11,7 +11,7 @@
 - data/ml-latest-small/：MovieLens CSV、预计算推荐缓存和评估结果。
 - report/：LaTeX 源码、编译后的实验报告及图表资源。
 
-说明：report/ 中的 PDF 是对所提供 Gemini 文稿的 LaTeX 转排；若其中的 TUI 描述或指标与当前脚本不同，以源码和 data/ml-latest-small/evaluation_results.json 为准。
+说明：report/report.tex 已按当前源码与 data/ml-latest-small/evaluation_results.json 校正，report.pdf 由该源码重新编译；代码附录通过 listings 直接引用 recommender.py。
 
 ## 安装与运行
 
