@@ -14,7 +14,7 @@
 \setlength{\parindent}{2em}
 \setlength{\parskip}{2pt}
 \linespread{1.08}
-\setlength{\emergencystretch}{2em}
+\setlength{\emergencystretch}{4em}
 \setlist{nosep,leftmargin=2em}
 \pagestyle{fancy}
 \fancyhf{}
@@ -60,7 +60,7 @@
 \begin{itemize}
 \item \term{紧凑索引与残差协同建模：}用连续位置映射替代原始 \code{movieId} 下标，以 NaN 表示缺失评分并用布尔掩码隔离；先拟合正则化用户/电影双偏差基线 $b_{ui}=\mu+b_u+b_i$，再在残差上计算带共同评分门槛与收缩的余弦相似度，融合 UserCF 与 ItemCF 两条修正通道。
 \item \term{可复查的时序评估：}按每位用户的时间戳做外层 80\%/20\% 留出（训练 79,748 条，测试 20,256 条），并在训练集内部再留出验证集（16,209 条）调参。测试集 RMSE 从用户均分基线的 0.9750 降至双偏差的 0.9072，最终混合模型为 0.8979；MAE 从 0.7477 降至 0.6851。另报告随机邻居阴性对照、合成信号阳性对照、逐项消融和按用户配对 bootstrap 区间。
-\item \term{纯 Python 工程与终端界面：}实现 \code{recommender.py}、\code{tui.py}、\code{main.py} 三个模块；TUI 基于 prompt\_toolkit，提供用户、流派子串和片名子串筛选，F2/F3 翻页，Tab 切换输入框，Ctrl-Q 退出，并直接读取离线 Top-50 推荐缓存。
+\item \term{纯 Python 工程与终端界面：}TUI 基于 prompt\_toolkit，支持用户、流派子串和片名子串筛选，F2/F3 翻页，Tab 切换输入框，Ctrl-Q 退出，直接读取离线 Top-50 缓存。
 \end{itemize}
 \begin{center}
 \small
@@ -225,7 +225,7 @@ ItemCF & $K$ / $c_{\min}$ / $\beta_s$ / $\alpha_i$ & 100 / 1 / 15.0 / 0.25\\
 
 底层以 NumPy 向量化为主：评分矩阵为 float32 的 $671\times9{,}066$ 数组，缺失位置是 \code{NaN}；$M$ 为布尔观测掩码。用户共同评分数通过 $C=MM^{\mathsf T}$ 得到，残差内积通过 $E_{\mathrm{dot}}=R_{\mathrm{res}}R_{\mathrm{res}}^{\mathsf T}$ 得到；ItemCF 先用 scikit-learn 的余弦最近邻为每部电影取 128 个候选，再只对候选对统计共同评分人数，最后用 CSR 稀疏矩阵保存 Top-$K$ 有向物品邻居。这样既避免 $9{,}066^2$ 的稠密物品相似度矩阵，也避免把缺失值当成 0 分。
 
-内存方面，原始 ID 直接建列的 float64 矩阵约 880.08 MB；本项目的 float32 密集评分矩阵约 24.33 MB，残差 CSR 约 0.80 MB（100,004 个非零元），布尔观测掩码约 0.50 MB。缓存 \code{demo\_data.json} 保存数据集计数、选中参数、测试指标以及每位用户的 Top-50 未看电影推荐。
+内存方面，原始 ID 直接建列的 float64 矩阵约 880.08 MB；本项目的 float32 密集评分矩阵约 24.33 MB，残差 CSR 约 0.80 MB（100,004 个非零元），布尔观测掩码约 0.50 MB。缓存 \code{demo\_data.json} 保存数据集计数、选中参数、测试指标以及每位用户的 Top-50 未看电影推荐。需要强调的是，演示缓存使用全部 100,004 条评分重建，而第 3 节测试指标来自外层训练集（79,748 条）训练出的模型；缓存中的预测分只用于交互展示，不能当作留出测试结果。
 
 \subsection{TUI 布局与交互}
 交互界面使用 prompt\_toolkit 实现全屏应用，依赖已写入 \code{requirements.txt}。界面包含四个区域：
