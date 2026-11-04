@@ -22,20 +22,18 @@ jobs:
         with:
           persist-credentials: true
 
-      - name: Install XeLaTeX and fonts
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            texlive-xetex texlive-latex-extra texlive-lang-chinese \
-            fonts-noto-cjk fonts-liberation
-          fc-cache -f
+      # TeX Live is already in the image; install only the document fonts.
+      # The full TeX Live image also provides pzdr.tfm (Zapf Dingbats).
+      - name: Build PDF with XeLaTeX
+        uses: xu-cheng/latex-action@v4
+        with:
+          root_file: report/report.tex
+          work_in_root_file_dir: true
+          latexmk_use_xelatex: true
+          extra_system_packages: "font-noto-cjk font-liberation"
 
-      - name: Build PDF
-        working-directory: report
-        run: |
-          xelatex -interaction=nonstopmode -halt-on-error -file-line-error report.tex
-          xelatex -interaction=nonstopmode -halt-on-error -file-line-error report.tex
-          test -s report.pdf
+      - name: Verify PDF
+        run: test -s report/report.pdf
 
       - name: Commit updated PDF
         run: |
