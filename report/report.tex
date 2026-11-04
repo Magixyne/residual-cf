@@ -1,15 +1,13 @@
 \documentclass[10pt,a4paper]{article}
 \usepackage{fontspec}
 \usepackage[a4paper,margin=17mm,headheight=20pt,footskip=8mm]{geometry}
-\usepackage{amsmath,amssymb,graphicx,booktabs,tabularx,longtable,array,xcolor,fancyhdr,hyperref,caption,enumitem,listings}
+\usepackage{amsmath,amssymb,graphicx,booktabs,tabularx,array,xcolor,fancyhdr,hyperref,caption,enumitem}
 \setmainfont{Microsoft YaHei}
 \setsansfont{Microsoft YaHei}
 \setmonofont{Consolas}
 \XeTeXlinebreaklocale "zh"
 \XeTeXlinebreakskip=0pt plus 0.1pt
 \definecolor{navy}{HTML}{18324F}
-\definecolor{orange}{HTML}{D76A2A}
-\definecolor{pale}{HTML}{F1F5F8}
 \definecolor{linegray}{HTML}{D6DEE5}
 \hypersetup{colorlinks=true,linkcolor=navy,urlcolor=navy,citecolor=navy}
 \captionsetup{font=small,labelfont={bf,color=navy},skip=5pt}
@@ -29,29 +27,6 @@
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 \newcommand{\term}[1]{\textbf{\color{navy}#1}}
 \newcommand{\code}[1]{\texttt{#1}}
-\lstdefinestyle{py}{
-  language=Python,
-  basicstyle=\ttfamily\scriptsize,
-  keywordstyle=\color{navy}\bfseries,
-  commentstyle=\color{gray!80!black},
-  stringstyle=\color{orange!85!black},
-  numbers=left,
-  numberstyle=\tiny\color{gray},
-  numbersep=5pt,
-  frame=single,
-  rulecolor=\color{linegray},
-  backgroundcolor=\color{pale},
-  breaklines=true,
-  columns=fullflexible,
-  keepspaces=true,
-  showstringspaces=false,
-  xleftmargin=1.2em,
-  framexleftmargin=0.4em,
-  captionpos=b,
-  aboveskip=4pt,
-  belowskip=4pt
-}
-\renewcommand{\lstlistingname}{代码}
 \begin{document}
 
 \thispagestyle{empty}
@@ -93,7 +68,7 @@
 \toprule
 \term{课程提交核对项} & \term{具体指标与格式要求}\\
 \midrule
-正文字数与附录页数 & 正文按课程要求排版；附录为实际核心代码节选，控制在 3 页以内。\\
+正文篇幅与代码 & 正文按课程要求排版；完整实现见仓库源码，报告不再重复整段代码。\\
 截止时间与接收邮箱 & 11 月 15 日 23:59 前发送至 \code{zhh\_swufe@126.com}，邮件只需发送一次。\\
 邮件主题与压缩包命名 & 邮件主题：周一12节实验报告：组长姓名、组员1姓名、组员2姓名……；文件夹与压缩包同名：周一12节：组长姓名、组员1姓名、组员2姓名……\\
 \bottomrule
@@ -103,7 +78,7 @@
 \clearpage
 \section{实验背景、数据特征与实现风险}
 \subsection{MovieLens 数据集结构与评分分布}
-个性化推荐需要从高度稀疏的历史交互中区分全局统计规律与个体偏好。本实验采用 GroupLens 发布的 MovieLens ml-latest-small 基准集：100,004 条带时间戳的显式评分，671 位用户（每人至少 20 条评分），9,066 部至少被评分一次的电影，电影目录共 9,125 部。每部电影由 \code{movieId} 唯一标识，\code{movies.csv} 提供英文片名、上映年份和竖线分隔的流派标签。数据中有 19 个命名流派（Action、Adventure、Animation、Children、Comedy、Crime、Documentary、Drama、Fantasy、Film-Noir、Horror、IMAX、Musical、Mystery、Romance、Sci-Fi、Thriller、War、Western），另有 18 部影片标记为 \code{(no genres listed)}。
+个性化推荐需要从高度稀疏的历史交互中区分全局统计规律与个体偏好。本实验采用 GroupLens 发布的 MovieLens ml-latest-small 基准集[1,2]：100,004 条带时间戳的显式评分，671 位用户（每人至少 20 条评分），9,066 部至少被评分一次的电影，电影目录共 9,125 部。每部电影由 \code{movieId} 唯一标识，\code{movies.csv} 提供英文片名、上映年份和竖线分隔的流派标签。数据中有 19 个命名流派（Action、Adventure、Animation、Children、Comedy、Crime、Documentary、Drama、Fantasy、Film-Noir、Horror、IMAX、Musical、Mystery、Romance、Sci-Fi、Thriller、War、Western），另有 18 部影片标记为 \code{(no genres listed)}。
 
 评分采用 0.5 分至 5.0 分的半星十档制。全站平均分 $\mu=3.5436$，标准差约 1.0581。不低于 3.0 分的正向评价共 82,170 条，占 82.17\%；4.0 分是众数档位（28,750 条，占 28.75\%），其次为 3.0 分（20,064 条，占 20.06\%）和 5.0 分（15,095 条，占 15.09\%）。2.0 分及以下共 13,385 条（13.38\%），最低档 0.5 分有 1,101 条（1.10\%）。高分聚集说明用户会主动选择预期感兴趣或口碑较好的影片，评分分布并非随机；因此模型应先估计非均匀的统计基线，再讨论个性化修正。
 
@@ -114,27 +89,13 @@
 \end{figure}
 
 \subsection{原始 ID 直接建矩阵的四类风险}
-若沿用“把 \code{movieId} 直接当数组列下标”的直觉写法，会遇到以下四类问题。本项目并不依赖某个未随仓库提供的 Notebook，而是把这些问题作为实现约束逐项处理：
+若沿用“把 \code{movieId} 直接当数组列下标”的直觉写法，会遇到以下四类问题。本项目以仓库中的 Python 实现为准，不依赖未随仓库提供的 Notebook，而是把这些问题作为实现约束逐项处理：
 \begin{enumerate}
 \item \term{离散 ID 作下标导致内存膨胀。}有评分的电影只有 9,066 部，但评分表中的最大 \code{movieId} 为 163,949。若直接构造 $(671,163949)$ 的双精度矩阵，单个矩阵约 880.08 MB；其中 154,883 列（94.47\%）从未出现评分。改为连续位置映射后，$671\times9066$ 的 float32 矩阵约 24.33 MB。
 \item \term{缺失评分与真实低分混同。}若把评分缩放到 $[0,1]$ 并把未评分位置填 0，0.5 分会与“缺失”得到相同的数值，相似度和加权预测会把未评分当成真实低分。本项目的评分矩阵用 \code{NaN} 表示缺失，并额外保存布尔观测掩码；残差矩阵只在矩阵乘法前把缺失位置置零，观测掩码负责隔离这些位置。
 \item \term{预测矩阵切片轴向颠倒。}矩阵行轴对应用户、列轴对应电影。若写成 \code{user\_prediction[:, userid]}，取到的是一部电影对所有用户的预测分，再把用户行号当作片名下标，推荐结果与目标用户无关。正确做法是沿用户行取 \code{pred[u\_idx, :]}，过滤已评分电影后再用索引反查片名与流派。
 \item \term{训练/测试独立建模导致评估错位。}若训练集和测试集各自建矩阵、各自训练，再跨矩阵比较预测值与测试评分，模型并没有在“只看过去”的条件下预测未来，指标不可解释。本项目使用按用户时间戳的嵌套切分：外层训练/测试，内层训练/验证；所有超参数只在内层验证集选择。
 \end{enumerate}
-
-\begin{center}
-\small
-\begin{tabularx}{\textwidth}{P{28mm}Y Y}
-\toprule
-\term{实现维度} & \term{直接使用原始 ID 的写法} & \term{本项目实现}\\
-\midrule
-索引与内存 & 以最大 \code{movieId}=163,949 作列下标，双精度矩阵约 880.08 MB。 & 双向连续映射 $0\ldots670$ 与 $0\ldots9065$；float32 密集矩阵约 24.33 MB，残差 CSR 约 0.80 MB，布尔掩码约 0.50 MB。\\
-缺失值处理 & 缩放至 $[0,1]$ 后以 0 填充，最低分与缺失不可区分。 & 保留 0.5--5.0 原始量纲；\code{NaN} + 布尔掩码分离缺失与观测。\\
-检索轴向 & 误用列切片，片名排序也未与 \code{movieId} 对齐。 & 沿用户行取预测，过滤已评分项，再用 \code{movieId} 反查元数据。\\
-评估协议 & 训练集与测试集独立建模后比较，存在时间泄露与尺度错位。 & 按用户时间戳 80\%/20\% 留出；训练集内部再留 20\% 验证集调参。\\
-\bottomrule
-\end{tabularx}
-\end{center}
 
 \section{算法：从评分匹配到残差协同}
 \subsection{传统 UserCF 的局限}
@@ -218,16 +179,11 @@ ItemCF & $K$ / $c_{\min}$ / $\beta_s$ / $\alpha_i$ & 100 / 1 / 15.0 / 0.25\\
 
 \section{评估协议与对照实验}
 \subsection{时序切分与调参}
-推荐系统评估协议决定结论是否可信。Ferrari Dacrema 等人在 RecSys 2019 的复现研究指出，复杂模型不一定优于简单模型，为 UserKNN/ItemKNN 公平调参并配置强偏差基线十分重要[3]。Said 与 Bellogín 的复现综述、Said 等人对评估方法的再检讨也强调避免未来数据预测过去，并通过对照与消融验证组件增益[4,5]。
+推荐系统评估协议决定结论是否可信。Ferrari Dacrema 等人在 RecSys 2019 的复现研究指出，复杂模型不一定优于简单模型，为 UserKNN/ItemKNN 公平调参并配置强偏差基线十分重要[3]。Said 与 Bellogín 的复现综述、Said 等人对评估方法的再检讨也强调避免未来数据预测过去，并通过对照与消融验证组件增益[4,5]；Verachtert 等人进一步说明训练时间窗口本身也是应调的超参数[6]。
 
-本项目按每位用户的 \code{timestamp}（同时间按 \code{movieId}）升序排序，取前 80\% 作外层训练集（79,748 条），最近 20\% 作测试集（20,256 条）；再对外层训练集做同样的 80\%/20\% 切分，得到内层训练集与验证集（16,209 条）。双偏差、UserCF、ItemCF 和混合系数都只在内层验证集上选择，外层测试集只在最终评估时使用。调参网格为：
-\begin{itemize}
-\item 双偏差：$\lambda_u\in\{0,2,5,10,20,50\}$，$\lambda_i\in\{0,5,10,25,50,100\}$；
-\item UserCF：$K\in\{20,40,80,160,320,500\}$，$c_{\min}\in\{3,5,10\}$，$\beta_s\in\{0,5,15\}$，$\alpha_u\in\{0,0.2,\ldots,1.0\}$；
-\item ItemCF：$K\in\{20,50,100\}$，$c_{\min}\in\{1,2,3\}$，$\beta_s\in\{5,15\}$，$\alpha_i\in\{0,0.25,\ldots,1.0\}$；
-\item 混合：$\gamma\in\{0,0.25,0.5,0.75,1.0,1.25\}$。
-\end{itemize}
-评价指标为测试集 RMSE 与 MAE。另以用户为聚类单位做 2,000 次配对 bootstrap，报告“基线误差减去模型误差”的 95\% 区间；区间下界大于 0 才说明改进在用户层面稳定。
+本项目按每位用户的 \code{timestamp}（同时间按 \code{movieId}）升序排序，取前 80\% 作外层训练集（79,748 条），最近 20\% 作测试集（20,256 条）；再对外层训练集做同样的 80\%/20\% 切分，得到内层训练集与验证集（16,209 条）。双偏差、UserCF、ItemCF 和混合系数都只在内层验证集上选择，外层测试集只在最终评估时使用。调参网格覆盖双偏差正则化、UserCF/ItemCF 的邻居数、共同评分门槛、收缩系数与阻尼强度，以及混合系数；具体网格和选择结果见 \code{evaluation\_results.json}。
+
+评价指标为测试集 RMSE 与 MAE；另以用户为聚类单位做 2,000 次配对 bootstrap，报告“基线误差减去模型误差”的 95\% 区间，区间下界大于 0 才说明改进在用户层面稳定。
 
 \subsection{主结果与对照/消融}
 表~\ref{tab:metrics} 汇总测试集结果。空白对照使用全局均值；阴性对照在保持每个用户邻居权重分布与度的前提下随机置换邻居身份，重复 25 次；阳性对照使用一个 3×3 的合成残差矩阵，基线分 3.0，注入同向邻居信号后预测 5.0，增益 2.0，判定阈值为“高于基线 1.0 以上”。
@@ -272,7 +228,7 @@ ItemCF & $K$ / $c_{\min}$ / $\beta_s$ / $\alpha_i$ & 100 / 1 / 15.0 / 0.25\\
 内存方面，原始 ID 直接建列的 float64 矩阵约 880.08 MB；本项目的 float32 密集评分矩阵约 24.33 MB，残差 CSR 约 0.80 MB（100,004 个非零元），布尔观测掩码约 0.50 MB。缓存 \code{demo\_data.json} 保存数据集计数、选中参数、测试指标以及每位用户的 Top-50 未看电影推荐。
 
 \subsection{TUI 布局与交互}
-交互界面使用 prompt\_toolkit（不是 curses）实现全屏应用，依赖已写入 \code{requirements.txt}。界面包含四个区域：
+交互界面使用 prompt\_toolkit 实现全屏应用，依赖已写入 \code{requirements.txt}。界面包含四个区域：
 \begin{enumerate}
 \item 顶部信息区：显示评分总数、用户数、有评分电影数，以及当前用户的评分条数、平均分和高分电影摘要。
 \item 检索控制栏：三个文本框分别接收用户 ID（Enter 校验并切换）、流派子串（大小写不敏感）和片名子串（大小写不敏感）。
@@ -311,19 +267,8 @@ ItemCF & $K$ / $c_{\min}$ / $\beta_s$ / $\alpha_i$ & 100 / 1 / 15.0 / 0.25\\
 \item GroupLens Research. MovieLens Latest Small Dataset. \url{https://grouplens.org/datasets/movielens/}.
 \item Maurizio Ferrari Dacrema, Paolo Cremonesi, and Dietmar Jannach. Are We Really Making Much Progress? A Worrying Analysis of Recent Neural Recommendation Approaches. In \emph{Proceedings of ACM RecSys '19}, 2019. \url{https://arxiv.org/abs/1907.06902}.
 \item Alan Said and Alejandro Bellogín. Reproducibility in Recommender Systems: A Survey. arXiv:2607.26074, 2026. \url{https://arxiv.org/abs/2607.26074}.
-\item Alan Said, Maria Soledad Pera, and Michael D. Ekstrand. We're Still Doing It (All) Wrong: Recommender Systems, Fifteen Years Later. arXiv:2509.09414, 2025. \url{https://arxiv.org/abs/2509.09414}.
+\item Alan Said, Maria Soledad Pera, and Michael D. Ekstrand. \mbox{We're} Still Doing It (All) Wrong: Recommender Systems, Fifteen Years Later. arXiv:2509.09414, 2025. \url{https://arxiv.org/abs/2509.09414}.
 \item Robin Verachtert, Lien Michiels, and Bart Goethals. Are We Forgetting Something? Correctly Evaluate a Recommender System With an Optimal Training Window. In \emph{PERSPECTIVES 2022, CEUR Workshop Proceedings}, Vol. 3228, 2022. \url{https://ceur-ws.org/Vol-3228/paper1.pdf}.
-\item Badrul Sarwar, George Karypis, Joseph Konstan, and John Riedl. Item-Based Collaborative Filtering Recommendation Algorithms. In \emph{Proceedings of WWW '01}, 2001.
-\item Yehuda Koren, Robert Bell, and Chris Volinsky. Matrix Factorization Techniques for Recommender Systems. \emph{IEEE Computer}, 42(8), 2009.
 \end{enumerate}
-
-\clearpage
-\section*{附录：核心实现代码节选}
-以下代码直接取自仓库 \code{recommender.py}，覆盖时序切分、紧凑索引、双偏差估计、收缩残差相似度、UserCF 修正和阳性对照。完整实现、TUI 与评估脚本见仓库根目录。
-
-\lstinputlisting[style=py,firstline=39,lastline=66,caption={时序切分与连续索引评分矩阵}]{../recommender.py}
-\lstinputlisting[style=py,firstline=68,lastline=97,caption={交替更新的正则化双偏差}]{../recommender.py}
-\lstinputlisting[style=py,firstline=139,lastline=169,caption={收缩残差相似度与 UserCF 修正}]{../recommender.py}
-\lstinputlisting[style=py,firstline=365,lastline=399,caption={合成信号阳性对照}]{../recommender.py}
 
 \end{document}

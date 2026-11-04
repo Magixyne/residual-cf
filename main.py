@@ -49,39 +49,31 @@ def main():
     parser.add_argument("--once", type=int, metavar="USER_ID", help="print one user's recommendations and exit")
     parser.add_argument("--user", type=int, default=66, help="initial user ID for the interactive TUI")
     args = parser.parse_args()
+    cache_path = Path(args.data_dir) / "demo_data.json"
 
-    ratings, movies = load_data(args.data_dir)
-    evaluation = None
     if args.evaluate or args.rebuild:
-        evaluation = evaluate_model(ratings, movies)
+        ratings, movies = load_data(args.data_dir)
+        result = evaluate_model(ratings, movies)
         report_path = Path(args.data_dir) / "evaluation_results.json"
-        report_path.write_text(json.dumps(evaluation, ensure_ascii=False, indent=2), encoding="utf-8")
+        report_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
         if args.evaluate:
-            print_metrics(evaluation)
+            print_metrics(result)
             print(f"\nSaved evaluation details: {report_path}")
-    if args.rebuild:
-        demo_data = build_demo_data(
-            ratings,
-            movies,
-            params=evaluation["params"],
-            metrics=evaluation["metrics"],
-        )
-        path = save_demo_data(args.data_dir, demo_data)
-        print(f"Updated {path}")
-        if args.evaluate:
-            return
-    if args.once is not None:
-        cache = Path(args.data_dir) / "demo_data.json"
-        if not cache.exists():
-            parser.error("demo_data.json not found; run with --rebuild first")
-        print_user(json.loads(cache.read_text(encoding="utf-8")), args.once)
+        if args.rebuild:
+            path = save_demo_data(
+                args.data_dir,
+                build_demo_data(ratings, movies, params=result["params"], metrics=result["metrics"]),
+            )
+            print(f"Updated {path}")
         return
-    if args.evaluate:
-        return
-    cache = Path(args.data_dir) / "demo_data.json"
-    if not cache.exists():
+
+    if not cache_path.exists():
         parser.error("demo_data.json not found; run with --rebuild first")
-    run_tui(json.loads(cache.read_text(encoding="utf-8")), initial_user=args.user)
+    data = json.loads(cache_path.read_text(encoding="utf-8"))
+    if args.once is not None:
+        print_user(data, args.once)
+    else:
+        run_tui(data, initial_user=args.user)
 
 
 if __name__ == "__main__":

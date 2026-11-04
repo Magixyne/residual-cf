@@ -9,25 +9,6 @@ import pandas as pd
 from scipy.sparse import csr_matrix
 from sklearn.neighbors import NearestNeighbors
 
-DEFAULT_PARAMS = {
-    "bias": {"lambda_user": 10.0, "lambda_movie": 25.0},
-    "user_cf": {
-        "k_neighbors": 320,
-        "min_common": 3,
-        "shrinkage": 15.0,
-        "correction_scale": 0.4,
-    },
-    "item_cf": {
-        "k_neighbors": 50,
-        "min_common": 2,
-        "shrinkage": 15.0,
-        "correction_scale": 0.5,
-    },
-    "hybrid_scale": 0.5,
-}
-RECOMMENDATION_LIMIT = 50
-
-
 def load_data(data_dir: Path):
     data_dir = Path(data_dir)
     return (
@@ -626,12 +607,11 @@ def evaluate_model(ratings, movies):
 def build_demo_data(
     ratings,
     movies,
-    params=None,
-    metrics=None,
-    recommendation_limit=RECOMMENDATION_LIMIT,
+    params,
+    metrics,
+    recommendation_limit=50,
 ):
     """Fit tuned components on all included ratings and build an offline cache."""
-    params = params or DEFAULT_PARAMS
     user_ids = np.sort(ratings["userId"].unique())
     movie_ids = np.sort(movies["movieId"].unique())
     user_index = pd.Index(user_ids)

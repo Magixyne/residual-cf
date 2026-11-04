@@ -52,12 +52,12 @@ def _cell(value: str, width: int) -> str:
 def run_tui(data, initial_user=66):
     users = data["users"]
     state = {"user_id": int(initial_user), "error": "", "page": 0}
-    app_ref = {}
+    app = None
 
     def invalidate():
         state["page"] = 0
-        if "app" in app_ref:
-            app_ref["app"].invalidate()
+        if app is not None:
+            app.invalidate()
 
     def accept_user(buffer):
         try:
@@ -69,8 +69,8 @@ def run_tui(data, initial_user=66):
             state["page"] = 0
         except ValueError:
             state["error"] = "用户 ID 不存在；请检查后按 Enter。"
-        if "app" in app_ref:
-            app_ref["app"].invalidate()
+        if app is not None:
+            app.invalidate()
 
     user_input = TextArea(
         text=str(initial_user), height=1, multiline=False,
@@ -84,6 +84,12 @@ def run_tui(data, initial_user=66):
     )
     genre_input.buffer.on_text_changed += lambda _: invalidate()
     search_input.buffer.on_text_changed += lambda _: invalidate()
+
+    def matches(movie, genre, query):
+        return (
+            (not genre or genre in movie["genres"].casefold())
+            and (not query or query in movie["title"].casefold())
+        )
 
     def render():
         fragments = []
@@ -126,8 +132,7 @@ def run_tui(data, initial_user=66):
         query = search_input.text.strip().casefold()
         candidates = [
             movie for movie in user["recommendations"]
-            if (not genre or genre in movie["genres"].casefold())
-            and (not query or query in movie["title"].casefold())
+            if matches(movie, genre, query)
         ]
         page_count = max(1, ceil(len(candidates) / PAGE_SIZE))
         state["page"] = min(state["page"], page_count - 1)
@@ -214,8 +219,7 @@ def run_tui(data, initial_user=66):
         query = search_input.text.strip().casefold()
         count = sum(
             1 for movie in user.get("recommendations", [])
-            if (not genre or genre in movie["genres"].casefold())
-            and (not query or query in movie["title"].casefold())
+            if matches(movie, genre, query)
         )
         state["page"] = min(max(0, ceil(count / PAGE_SIZE) - 1), state["page"] + 1)
         event.app.invalidate()
@@ -227,7 +231,6 @@ def run_tui(data, initial_user=66):
         full_screen=True,
         mouse_support=True,
     )
-    app_ref["app"] = app
     app.run()
 
 

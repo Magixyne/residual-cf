@@ -4,7 +4,7 @@
 - report.pdf：由 report.tex 编译生成的报告。
 - figures/：评分分布/模型误差与内存/阻尼示意图。
 
-正文、公式、表格和参考文献由 LaTeX 排布；附录不再使用代码截图，而是用 listings 直接引入仓库根目录的 `recommender.py` 代码节选，避免图文与源码不一致。
+正文、公式、表格和参考文献由 LaTeX 排布；报告不再重复代码，完整实现见仓库根目录的 `recommender.py`、`tui.py` 和 `main.py`。
 
 ## 编译
 
