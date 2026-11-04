@@ -2,9 +2,19 @@
 \usepackage{fontspec}
 \usepackage[a4paper,margin=17mm,headheight=20pt,footskip=8mm]{geometry}
 \usepackage{amsmath,amssymb,graphicx,booktabs,tabularx,array,xcolor,fancyhdr,hyperref,caption,enumitem}
-\setmainfont{Microsoft YaHei}
-\setsansfont{Microsoft YaHei}
-\setmonofont{Consolas}
+% Prefer the original Windows fonts; use free fonts on Linux CI.
+\IfFontExistsTF{Microsoft YaHei}{%
+  \setmainfont{Microsoft YaHei}
+  \setsansfont{Microsoft YaHei}
+}{%
+  \setmainfont{Noto Sans CJK SC}
+  \setsansfont{Noto Sans CJK SC}
+}
+\IfFontExistsTF{Consolas}{%
+  \setmonofont{Consolas}
+}{%
+  \setmonofont{Liberation Mono}
+}
 \XeTeXlinebreaklocale "zh"
 \XeTeXlinebreakskip=0pt plus 0.1pt
 \definecolor{navy}{HTML}{18324F}
