@@ -53,7 +53,7 @@ def main():
 
     if args.evaluate or args.rebuild:
         ratings, movies = load_data(args.data_dir)
-        result = evaluate_model(ratings, movies)
+        result = evaluate_model(ratings)
         report_path = Path(args.data_dir) / "evaluation_results.json"
         report_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
         if args.evaluate:

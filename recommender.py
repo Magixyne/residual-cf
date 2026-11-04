@@ -457,10 +457,10 @@ def paired_user_bootstrap(actual, baseline_prediction, model_prediction, user_id
     }
 
 
-def evaluate_model(ratings, movies):
+def evaluate_model(ratings):
     """Use nested time splits; tune every baseline/model before a paired outer test."""
     user_ids = np.sort(ratings["userId"].unique())
-    movie_ids = np.sort(movies["movieId"].unique())
+    movie_ids = np.sort(ratings["movieId"].unique())
     user_index, movie_index = pd.Index(user_ids), pd.Index(movie_ids)
     outer_train, test = split_by_user_time(ratings, 0.2)
     inner_train, validation = split_by_user_time(outer_train, 0.2)
@@ -613,7 +613,7 @@ def build_demo_data(
 ):
     """Fit tuned components on all included ratings and build an offline cache."""
     user_ids = np.sort(ratings["userId"].unique())
-    movie_ids = np.sort(movies["movieId"].unique())
+    movie_ids = np.sort(ratings["movieId"].unique())
     user_index = pd.Index(user_ids)
     movie_index = pd.Index(movie_ids)
     bias = params["bias"]
