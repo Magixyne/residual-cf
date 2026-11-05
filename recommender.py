@@ -457,6 +457,64 @@ def paired_user_bootstrap(actual, baseline_prediction, model_prediction, user_id
     }
 
 
+def ranking_metrics(
+    observed,
+    test,
+    user_pos,
+    movie_pos,
+    predictions,
+    k_values=(10, 20, 50),
+    relevance_threshold=4.0,
+):
+    """Rank unseen items per user and report Recall@K, NDCG@K, and coverage."""
+    relevant = {}
+    for user, movie, rating in zip(user_pos, movie_pos, test["rating"]):
+        if rating >= relevance_threshold:
+            relevant.setdefault(int(user), set()).add(int(movie))
+    users = sorted(relevant)
+    k_values = [int(k) for k in k_values]
+    max_k = max(k_values)
+    n_movies = observed.shape[1]
+    result = {
+        "K": k_values,
+        "relevance_threshold": float(relevance_threshold),
+        "users": len(users),
+        "models": {},
+    }
+    for name, prediction in predictions.items():
+        recall = {k: 0.0 for k in k_values}
+        ndcg = {k: 0.0 for k in k_values}
+        recommended = {k: set() for k in k_values}
+        for user in users:
+            candidates = np.flatnonzero(~observed[user])
+            scores = prediction[user, candidates]
+            order = np.lexsort((candidates, -scores))[:max_k]
+            ranked = candidates[order]
+            relevant_items = relevant[user]
+            for k in k_values:
+                top_k = ranked[:k]
+                hits = sum(1 for movie in top_k if movie in relevant_items)
+                recall[k] += hits / len(relevant_items)
+                dcg = sum(
+                    1.0 / np.log2(rank + 2)
+                    for rank, movie in enumerate(top_k)
+                    if movie in relevant_items
+                )
+                ideal = sum(
+                    1.0 / np.log2(rank + 2)
+                    for rank in range(min(len(relevant_items), k))
+                )
+                ndcg[k] += dcg / ideal if ideal else 0.0
+                recommended[k].update(int(movie) for movie in top_k)
+        divisor = max(1, len(users))
+        result["models"][name] = {
+            "recall": {k: recall[k] / divisor for k in k_values},
+            "ndcg": {k: ndcg[k] / divisor for k in k_values},
+            "coverage": {k: len(recommended[k]) / n_movies for k in k_values},
+        }
+    return result
+
+
 def evaluate_model(ratings):
     """Use nested time splits; tune every baseline/model before a paired outer test."""
     user_ids = np.sort(ratings["userId"].unique())
@@ -586,9 +644,38 @@ def evaluate_model(ratings):
             actual, bias_prediction, hybrid_prediction, test["userId"].to_numpy(),
         ),
     }
+    full_baseline = outer_fit["baseline"]
+    full_user = np.clip(
+        full_baseline + user_params["correction_scale"] * user_correction,
+        0.5, 5.0,
+    )
+    full_item = np.clip(
+        full_baseline + item_params["correction_scale"] * item_correction,
+        0.5, 5.0,
+    )
+    full_hybrid = np.clip(
+        full_baseline + hybrid_scale * (
+            user_params["correction_scale"] * user_correction
+            + item_params["correction_scale"] * item_correction
+        ),
+        0.5, 5.0,
+    )
+    ranking = ranking_metrics(
+        outer_fit["observed"],
+        test,
+        test_user_pos,
+        test_movie_pos,
+        {
+            "bias": full_baseline,
+            "UserCF": full_user,
+            "ItemCF": full_item,
+            "Hybrid": full_hybrid,
+        },
+    )
     return {
         "params": params,
         "metrics": metrics,
+        "ranking": ranking,
         "negative_control": negative,
         "positive_control": synthetic_positive_control(),
         "paired_bootstrap": confidence,

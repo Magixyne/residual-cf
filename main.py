@@ -39,6 +39,17 @@ def print_metrics(result):
             f"ΔMAE [{interval['delta_MAE_95CI'][0]:+.4f}, "
             f"{interval['delta_MAE_95CI'][1]:+.4f}]"
         )
+    ranking = result.get("ranking")
+    if ranking:
+        print(f"\nTop-K ranking (test rating >= {ranking['relevance_threshold']:.1f}):")
+        for name, scores in ranking["models"].items():
+            text = "  ".join(
+                f"R@{k}={scores['recall'][k]:.4f} N@{k}={scores['ndcg'][k]:.4f}"
+                for k in ranking["K"]
+            )
+            print(f"{name:<7} {text}")
+        hybrid = ranking["models"]["Hybrid"]["coverage"]
+        print("Coverage  " + "  ".join(f"@{k}={hybrid[k]:.4f}" for k in ranking["K"]))
 
 
 def main():

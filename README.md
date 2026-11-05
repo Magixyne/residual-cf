@@ -36,7 +36,7 @@
 
 当前随附评估结果为：偏差基线 RMSE/MAE 0.9072/0.6949，UserCF 0.9016/0.6887，ItemCF 0.9015/0.6888，混合模型 0.8979/0.6851。参数只用训练集内部验证集选择，测试集按每位用户的时间顺序留出较晚评分。
 
-python main.py --evaluate 会在同一测试集上比较空白、偏差、UserCF、ItemCF 和混合模型，并保存阴性/阳性对照、加法/减法实验以及按用户 bootstrap 区间。
+python main.py --evaluate 会在同一测试集上比较空白、偏差、UserCF、ItemCF 和混合模型，并保存阴性/阳性对照、加法/减法实验、按用户 bootstrap 区间以及 Top-K 排序指标。当前排序结果中 ItemCF 最强（R@10 0.0285），混合模型未超过 ItemCF；具体数值见 data/ml-latest-small/evaluation_results.json。
 
 ## 测试
 

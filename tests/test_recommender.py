@@ -7,6 +7,7 @@ import pandas as pd
 from recommender import (
     build_demo_data,
     make_rating_matrix,
+    ranking_metrics,
     score_metrics,
     split_by_user_time,
 )
@@ -65,6 +66,30 @@ class MetricsTest(unittest.TestCase):
         metrics = score_metrics([1.0, 3.0], [2.0, 1.0])
         self.assertAlmostEqual(metrics["RMSE"], np.sqrt(2.5))
         self.assertAlmostEqual(metrics["MAE"], 1.5)
+
+    def test_ranking_metrics_perfect_order(self):
+        observed = np.array([
+            [True, False, False],
+            [True, False, False],
+        ])
+        test = pd.DataFrame({
+            "userId": [0, 1],
+            "movieId": [1, 2],
+            "rating": [5.0, 5.0],
+        })
+        predictions = np.array([
+            [0.0, 10.0, 0.0],
+            [0.0, 0.0, 10.0],
+        ])
+        result = ranking_metrics(
+            observed, test, np.array([0, 1]), np.array([1, 2]),
+            {"perfect": predictions}, k_values=(1,),
+        )
+        scores = result["models"]["perfect"]
+        self.assertEqual(result["users"], 2)
+        self.assertEqual(scores["recall"][1], 1.0)
+        self.assertEqual(scores["ndcg"][1], 1.0)
+        self.assertAlmostEqual(scores["coverage"][1], 2 / 3)
 
 
 class CacheBuildTest(unittest.TestCase):
