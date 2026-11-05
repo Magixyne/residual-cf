@@ -34,7 +34,7 @@ jobs:
           work_in_root_file_dir: true
           latexmk_use_xelatex: true
           extra_texlive_packages: "collection-latexextra"
-          extra_system_packages: "fonts-noto-cjk fonts-liberation"
+          extra_system_packages: "font-noto-cjk font-liberation"
       - uses: actions/upload-artifact@v7
         with:
           name: report-pdf
