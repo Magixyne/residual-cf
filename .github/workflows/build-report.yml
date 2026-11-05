@@ -9,6 +9,7 @@ on:
       - '**/*.sty'
       - '**/*.png'
       - '**/*.jpg'
+      - '.github/workflows/*.yml'
   pull_request:
   workflow_dispatch:
 
