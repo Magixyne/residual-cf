@@ -59,7 +59,16 @@ def run_tui(data, initial_user=66):
         if app is not None:
             app.invalidate()
 
+    def select_all(buffer):
+        buffer.cursor_position = 0
+        buffer.start_selection()
+        buffer.cursor_position = len(buffer.text)
+
     def accept_user(buffer):
+        if not buffer.text.strip():
+            if app is not None:
+                app.invalidate()
+            return
         try:
             user_id = int(buffer.text.strip())
             if str(user_id) not in users:
@@ -67,13 +76,16 @@ def run_tui(data, initial_user=66):
             state["user_id"] = user_id
             state["error"] = ""
             state["page"] = 0
+            buffer.text = ""
+            buffer.cursor_position = 0
         except ValueError:
             state["error"] = "用户 ID 不存在；请检查后按 Enter。"
+            select_all(buffer)
         if app is not None:
             app.invalidate()
 
     user_input = TextArea(
-        text=str(initial_user), height=1, multiline=False,
+        text="", height=1, multiline=False,
         accept_handler=accept_user, style="class:input", name="user_id",
     )
     genre_input = TextArea(
@@ -187,7 +199,7 @@ def run_tui(data, initial_user=66):
     footer = Window(
         content=FormattedTextControl([(
             "class:help",
-            "  F2 上页   F3 下页   Tab 切换输入框   Ctrl-Q 退出   类型示例：Drama / Comedy  ",
+            "  F2/F3 翻页   Tab 切换输入框   Ctrl-U 清空   Ctrl-Q 退出   类型示例：Drama / Comedy  ",
         )]),
         height=1,
     )
