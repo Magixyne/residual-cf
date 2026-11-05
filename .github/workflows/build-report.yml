@@ -1,48 +1,40 @@
-name: Build and commit report PDF
+name: Build report PDF
 
 on:
   push:
-    paths-ignore:
-      - '**/*.pdf'
+    paths:
+      - '**/*.tex'
+      - '**/*.bib'
+      - '**/*.cls'
+      - '**/*.sty'
+      - '**/*.png'
+      - '**/*.jpg'
+  pull_request:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: report-pdf-${{ github.ref }}
-  cancel-in-progress: false
+  group: latex-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - name: Build PDF
+        uses: "SwufeFox/latex-action@v4"
         with:
-          persist-credentials: true
-
-      # TeX Live is already in the image; install only the document fonts.
-      # The full TeX Live image also provides pzdr.tfm (Zapf Dingbats).
-      - name: Build PDF with XeLaTeX
-        uses: xu-cheng/latex-action@v4
-        with:
+          scheme: small
+          parallel: true
           root_file: report/report.tex
           work_in_root_file_dir: true
           latexmk_use_xelatex: true
-          extra_system_packages: "font-noto-cjk font-liberation"
-
-      - name: Verify PDF
-        run: test -s report/report.pdf
-
-      - name: Commit updated PDF
-        run: |
-          git add report/report.pdf
-          if git diff --cached --quiet -- report/report.pdf; then
-            echo "PDF unchanged; nothing to commit."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "docs: rebuild report PDF [skip ci]"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          extra_texlive_packages: "collection-latexextra"
+          extra_system_packages: "fonts-noto-cjk fonts-liberation"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: report-pdf
+          path: report/report.pdf
